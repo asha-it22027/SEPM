@@ -1,0 +1,76 @@
+public class OrderApp {
+
+    // Shared Order class
+    static class Order {
+        private boolean isPlaced = false;
+
+        public synchronized void placeOrder() {
+            System.out.println("Placing the order...");
+            try {
+                Thread.sleep(1000); // Simulate placing time
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            isPlaced = true;
+            System.out.println("Order has been placed.");
+            notify(); // Notify the delivery thread
+        }
+
+        public synchronized void deliverOrder() {
+            while (!isPlaced) {
+                try {
+                    System.out.println("Waiting for order to be placed...");
+                    wait(); // Wait until order is placed
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("Order is being delivered...");
+            try {
+                Thread.sleep(1500); // Simulate delivery time
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Order delivered successfully!");
+        }
+    }
+
+    // Customer thread
+    static class Customer extends Thread {
+        private Order order;
+
+        public Customer(Order order) {
+            this.order = order;
+        }
+
+        @Override
+        public void run() {
+            order.placeOrder();
+        }
+    }
+
+    // Delivery service thread
+    static class DeliveryService extends Thread {
+        private Order order;
+
+        public DeliveryService(Order order) {
+            this.order = order;
+        }
+
+        @Override
+        public void run() {
+            order.deliverOrder();
+        }
+    }
+
+    // Main method
+    public static void main(String[] args) {
+        Order sharedOrder = new Order();
+
+        Thread delivery = new DeliveryService(sharedOrder);
+        Thread customer = new Customer(sharedOrder);
+
+        delivery.start(); // Start delivery thread first (it will wait)
+        customer.start(); // Then start customer thread
+    }
+}
